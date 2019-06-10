@@ -1,4 +1,4 @@
-GHSTATUS
+CISTATUS
 ========
 
 
