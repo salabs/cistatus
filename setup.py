@@ -43,7 +43,7 @@ Operating System :: POSIX :: Other
 
 setup(name=PACKAGE_NAME,
       version=VERSION,
-      description='CI Tool for adding status check results for individual components'
+      description='CI Tool for adding status check results for individual components',
       long_description=long_description,
       classifiers=CLASSIFIERS,
       url='https://github.com/salabs/cistatus',
