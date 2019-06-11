@@ -6,6 +6,7 @@ import subprocess
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
+
 def githead():
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'])[:40]
     return sha.decode('utf-8')
@@ -56,6 +57,7 @@ class Travis(CIBase):
         else:
             return pr
 
+
 class CircleCI(CIBase):
     ID_ENV = "CIRCLECI"
     PR_ENV = "CIRCLE_PR_NUMBER"
@@ -70,17 +72,20 @@ class CircleCI(CIBase):
 
         return "/".join([username, reponame])
 
+
 class AppVeyor(CIBase):
     ID_ENV = "APPVEYOR"
     PR_ENV = "APPVEYOR_PULL_REQUEST_NUMBER"
     REPO_ENV = "APPVEYOR_REPO_NAME"
-    SHA_ENV =  "APPVEYOR_REPO_COMMIT"
+    SHA_ENV = "APPVEYOR_REPO_COMMIT"
+
 
 class Shippable(CIBase):
     ID_ENV = "SHIPPABLE"
     PR_ENV = "PULL_REQUEST"
     REPO_ENV = "SHIPPABLE_REPO_SLUG"
     SHA_ENV = "COMMIT"
+
 
 class Semaphore(CIBase):
     ID_ENV = "SEMAPHORE"
@@ -130,10 +135,10 @@ class AzureDevOps(CIBase):
 
 
 def find_ci_provider():
-    ci_providers = [Travis, CircleCI, AppVeyor,Shippable, CodeBuild, AzureDevOps]
+    ci_providers = [Travis, CircleCI, AppVeyor, Shippable, CodeBuild, AzureDevOps]
     for ci_provider in ci_providers:
         if ci_provider.ID_ENV in os.environ:
-            LOGGER.info('CI {} detected'.format(ci_provider.ci_type))
+            LOGGER.info('CI {} detected'.format(ci_provider.__name__))
             return ci_provider()
 
     LOGGER.info('No CI detected')
