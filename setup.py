@@ -9,7 +9,7 @@ CWD = abspath(dirname(__file__))
 PACKAGE_NAME='cistatus'
 
 # Get the long description from the README file
-with open(join(CWD, 'README.rst'), encoding='utf-8') as f:
+with open(join(CWD, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Get version
@@ -45,6 +45,7 @@ setup(name=PACKAGE_NAME,
       version=VERSION,
       description='CI Tool for adding status check results for individual components',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       classifiers=CLASSIFIERS,
       url='https://github.com/salabs/cistatus',
       author='Jani Mikkonen',
