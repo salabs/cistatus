@@ -1,2 +1,2 @@
 include requirements.txt CHANGELOG README.rst LICENSE
-exclude .gitignore
+exclude .gitignore demos/
