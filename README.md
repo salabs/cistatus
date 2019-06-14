@@ -1,6 +1,11 @@
 CISTATUS
 ========
 
+# Demo
+![](demos/cistatus_demo.gif)
+
+# About
+
 cistatus is a tool that can explicitly set the pull request check status into github pull requests. For example, if you have multiple checks within a single job but you wish to expose each of those steps as separate checks in github, you can use this tool to expose those extra steps.
 
 cistatus can dig relevant information from the enviroment variables exposed by most ci systems. Currently supported:
@@ -62,7 +67,12 @@ This flag sets the personal authentication token. Value can be also set into GIT
 
 ## --context
 
-This flag sets the string shown as context of the check. 
+This flag sets the string shown as context of the check. Defaults to "default"
 
-## 
+## --description
 
+This flag sets the longder description of the context. Defaults to "CI Status"
+
+## --url
+
+This flag sets the url for "Details" link in context  / description for the check.
