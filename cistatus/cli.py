@@ -31,7 +31,7 @@ class EnvDefault(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def update_status(repo_name, sha, state, desc='CI Status', target_url=None, context=None, token=None):
+def update_status(repo_name, sha, state, desc='CI Status', target_url=None, context="default", token="CI Status"):
     url = GITHUB_STATUS_URL.format(repo_name=repo_name, sha=sha, token=token)
     params = dict()
     if desc:
