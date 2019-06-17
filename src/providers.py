@@ -11,15 +11,26 @@ def githead():
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'])[:40]
     return sha.decode('utf-8')
 
+def gitroot():
+    root = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])
+    return root.decode('utf-8').strip()
+
+
+def gitdiff(current_branch, orig_branch="master"):
+    f"{orig_branch}...{current_branch}"
+    data = subprocess.check_output(['git','diff', f"{orig_branch}...{current_branch}"]).decode('utf-8')
+    data = data.split('\n')
+    return data
 
 class CIBase(object):
     ID_ENV = None
     PR_ENV = None
     REPO_ENV = None
     SHA_ENV = None
+    BRANCH_ENV = None
 
     def __str__(self):
-        return f"TYPE: {str(self.ci_type)} PR: {str(self.pr)} SHA: {str(self.commit_sha)} REPO: {str(self.repo)}"
+        return f"TYPE: {str(self.ci_type)} PR: {str(self.pr)} SHA: {str(self.commit_sha)} TARGET: {str(self.target_branch)} REPO: {str(self.repo)}"
 
     def _get_value(self, key):
         if key:
@@ -29,6 +40,12 @@ class CIBase(object):
     @property
     def ci_type(self):
         return self.__class__.__name__
+
+
+    @property
+    def target_branch(self):
+        return self._get_value(self.BRANCH_ENV)
+
 
     @property
     def pr(self):
@@ -130,6 +147,7 @@ class CodeBuild(CIBase):
 class AzureDevOps(CIBase):
     ID_ENV = "AZURE_HTTP_USER_AGENT"
     PR_ENV = "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
+    BRANCH_ENV = "SYSTEM_PULLREQUEST_TARGETBRANCH"
     REPO_ENV = "BUILD_REPOSITORY_ID"
     SHA_ENV = "BUILD_SOURCEVERSION"
 

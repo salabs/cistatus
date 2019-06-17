@@ -14,7 +14,7 @@ with open(join(CWD, 'README.md'), encoding='utf-8') as f:
 
 # Get version
 CWD = abspath(dirname(__file__))
-VERSION_PATH = join(CWD, PACKAGE_NAME, 'version.py')
+VERSION_PATH = join(CWD, "src", 'version.py')
 exec(compile(open(VERSION_PATH).read(), VERSION_PATH, 'exec'))
 
 with open(join(CWD, 'requirements.txt'), encoding="utf-8") as f:
@@ -51,12 +51,13 @@ setup(name=PACKAGE_NAME,
       author='Jani Mikkonen',
       author_email='jani.mikkonen@gmail.com',
       license='APACHE',
-      packages=['cistatus'],
+      packages=['src'],
       install_requires=REQUIREMENTS,
       include_package_data=True,
       zip_safe=False,
       entry_points={
           'console_scripts': [
-              'cistatus = cistatus.cli:main',
+              'cistatus = src.status:main',
+              'cicomments= src.comments:main',
           ],
       })
