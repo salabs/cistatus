@@ -105,7 +105,7 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
             errors = testcase.get('error', False)
             failures = testcase.get('failure', False)
             filename = format_filename(testcase['@file'])
-            row = int(testcase['@line'])
+            row = int(testcase.get('@line', 0))
             if errors or failures and change_in_diff(filename, row, diff):
                 payload  = dict()
                 payload['commit_id'] = sha
@@ -118,6 +118,9 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
                     payload['body'] = testcase['failure']['@message']
                 if payload not in existing_comments:
                     result = requests.post(url, data=json.dumps(payload), headers=headers)
+                    print(result)
+                    print(result.content)
+                    print(payload)
 
     return False
 
