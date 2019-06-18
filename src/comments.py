@@ -4,6 +4,7 @@ import argparse
 import os
 import requests
 import sys
+import re
 from xmlschema import XMLSchema
 from pprint import pprint
 import os
@@ -50,7 +51,6 @@ def change_in_diff(filename, row, diff):
     def line_in_hunk():
         for ps in diff:
             if file_in_diff(ps):
-                print(filename)
                 for hunk in ps:
                     r = range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
                     if row in r:
@@ -58,31 +58,43 @@ def change_in_diff(filename, row, diff):
         return False
 
     b = line_in_hunk()
-    if not b:
-        print(f"LINE: {row} NAME: {filename}")
     return line_in_hunk()
+
+
+def get_next(links):
+    for tmpurl in links:
+        if tmpurl['rel'] == 'next':
+            return tmpurl['url']
+    return None
 
 def update_comments(junit = None, repo_name = None, pull_request = None, sha = None, target_branch = "master", token = None):
     url = GITHUB_PR_COMMENTS_URL.format(repo_name=repo_name, pull_request=pull_request, token=token)
     headers = {"Content-Type": "application/json"}
 
-    print("piu")
     diff = PatchSet(gitdiff(sha))
-
-    print("piu")
 
     params = dict()
     params['direction']='asc'
     params['sort']='created'
+    link_extractor = r"<(?P<NEXT>.*)>; rel=\"next\", <(?P<LAST>.*).*>"
+    link_matcher = re.compile(link_extractor)
     result = requests.get(url, data=json.dumps(params), headers=headers)
-    body = json.loads(result.content.decode('utf8'))
     existing_comments = []
-    for i in body:
-        existing_comments.append(pick(i, ["commit_id", "path", "position", "body"]))
+    while True:
+        body = json.loads(result.content.decode('utf8'))
+        for i in body:
+            tmp = pick(i, ["commit_id", "path", "position", "body"])
+            tmp['path'] = format_filename(tmp['path'])
+            existing_comments.append(tmp)
+        links = result.headers.get('Link', None)
+        if links:
 
-
-
-    print("ou")
+            links = requests.utils.parse_header_links(links)
+            next_url = get_next(links)
+            if next_url:
+                result = requests.get(next_url, headers=headers)
+            else:
+                break
 
     payload  = dict()
     matcher = r".*:\d{1,}:\d{1,}:\ .*"
@@ -106,10 +118,6 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
                     payload['body'] = testcase['failure']['@message']
                 if payload not in existing_comments:
                     result = requests.post(url, data=json.dumps(payload), headers=headers)
-                    print("XXXX")
-                    print(result)
-                    print(result.content)
-                    pprint(payload)
 
     return False
 
