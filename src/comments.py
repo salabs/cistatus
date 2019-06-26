@@ -62,6 +62,7 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
     link_matcher = re.compile(link_extractor)
     result = requests.get(url, data=json.dumps(params), headers=headers)
     existing_comments = []
+    uploaded_payloads = []
 
     while True:
         body = json.loads(result.content.decode('utf8'))
@@ -112,6 +113,7 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
                     if failures:
                         payload['body'] = testcase['failure']['@message']
                     if payload not in existing_comments:
+                        uploaded_payloads.append(payload)
                         result = requests.post(url, data=json.dumps(payload), headers=headers)
                         print(result)
                         print(result.content)
@@ -119,6 +121,9 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
                         print("already in")
                     print("PAYLOAD: ", payload)
         orig = xsha
+
+    with open("payloads.json", "w") as out:
+        out.write(json.dumps(uploaded_payloads, sort_keys=True, indent=4))
 
     return False
 
