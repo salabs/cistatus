@@ -22,6 +22,13 @@ def gitdiff(current_branch, orig_branch="master"):
     data = data.split('\n')
     return data
 
+def gitancestry(current_branch, orig_branch="master"):
+    #data = subprocess.check_output(['git', 'rev-list', f"{orig_branch}...{current_branch}").decode('utf-8')
+    data = subprocess.check_output(['git', 'rev-list', f'{orig_branch}...{current_branch}']).decode('utf-8')
+    data = list(filter(None, data.split('\n')))
+    return reversed(data)
+
+
 class CIBase(object):
     ID_ENV = None
     PR_ENV = None

@@ -11,15 +11,15 @@ import os
 from unidiff import PatchSet
 
 try:
-    from .providers import find_ci_provider, gitroot, gitdiff
+    from .providers import find_ci_provider, gitroot, gitdiff, gitancestry
 except ImportError:
-    from providers import find_ci_provider, gitroot, gitdiff
+    from providers import find_ci_provider, gitroot, gitdiff, gitancestry
 
 
 try:
-    from .utils import EnvDefault, valid_repo_name, valid_token, valid_pr, valid_file, valid_sha, pick
+    from .utils import EnvDefault, valid_repo_name, valid_token, valid_pr, valid_file, valid_sha, pick, Patch
 except ImportError:
-    from utils import EnvDefault, valid_repo_name, valid_token, valid_pr, valid_file, valid_sha, pick
+    from utils import EnvDefault, valid_repo_name, valid_token, valid_pr, valid_file, valid_sha, pick, Patch
 
 
 GITHUB_BASE = os.environ.get("GITHUB_BASE", "https://api.github.com")
@@ -39,27 +39,11 @@ def format_filename(name):
     return name
 
 def change_in_diff(filename, row, diff):
-    def file_in_diff(fn):
-        if filename == fn.path:
-            return True
-        elif os.path.join("a", filename) == fn.source_file:
-            return True
-        elif os.path.join("b", filename) == fn.target_file:
-            return True
-        return False
-
-    def line_in_hunk():
-        for ps in diff:
-            if file_in_diff(ps):
-                for hunk in ps:
-                    r = range(hunk.target_start, hunk.target_start + hunk.target_length + 1)
-                    if row in r:
-                        return True
-        return False
-
-    b = line_in_hunk()
-    return line_in_hunk()
-
+    position = diff.get_patch_position(filename, row)
+    result = position is not None
+    print(f"{filename}:{row} is in diff {result}")
+    return False
+    return position is not None
 
 def get_next(links):
     for tmpurl in links:
@@ -71,8 +55,6 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
     url = GITHUB_PR_COMMENTS_URL.format(repo_name=repo_name, pull_request=pull_request, token=token)
     headers = {"Content-Type": "application/json"}
 
-    diff = PatchSet(gitdiff(sha))
-
     params = dict()
     params['direction']='asc'
     params['sort']='created'
@@ -80,6 +62,7 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
     link_matcher = re.compile(link_extractor)
     result = requests.get(url, data=json.dumps(params), headers=headers)
     existing_comments = []
+    """
     while True:
         body = json.loads(result.content.decode('utf8'))
         for i in body:
@@ -95,32 +78,41 @@ def update_comments(junit = None, repo_name = None, pull_request = None, sha = N
                 result = requests.get(next_url, headers=headers)
             else:
                 break
+    """
 
-    payload  = dict()
-    matcher = r".*:\d{1,}:\d{1,}:\ .*"
     junit_schema = XMLSchema("data/cistatus.xsd")
     report = junit_schema.to_dict(junit)
-    for testsuite in report['testsuite']:
-        for testcase in testsuite['testcase']:
-            errors = testcase.get('error', False)
-            failures = testcase.get('failure', False)
-            filename = format_filename(testcase['@file'])
-            row = int(testcase.get('@line', 0))
-            if errors or failures and change_in_diff(filename, row, diff):
-                payload  = dict()
-                payload['commit_id'] = sha
-                payload['path'] = filename
+    orig = target_branch
+    for xsha in gitancestry(sha, target_branch):
+        print(f"Comparing {xsha} to {orig}")
+        diff_data = gitdiff(xsha, orig)
+        diff = Patch(diff_data)
+        for testsuite in report['testsuite']:
+            payload  = dict()
+            for testcase in testsuite['testcase']:
+                errors = testcase.get('error', False)
+                failures = testcase.get('failure', False)
+                filename = format_filename(testcase['@file'])
+                row = int(testcase.get('@line', 0))
+                if errors or failures and change_in_diff(filename, row, diff):
+                    payload  = dict()
+                    payload['commit_id'] = xsha
+                    payload['path'] = filename
 
-                payload['position'] = row
-                if errors:
-                    payload['body'] = testcase['error']['@message']
-                if failures:
-                    payload['body'] = testcase['failure']['@message']
-                if payload not in existing_comments:
-                    result = requests.post(url, data=json.dumps(payload), headers=headers)
-                    print(result)
-                    print(result.content)
-                    print(payload)
+                    payload['position'] = row
+                    print(f"LINE: {row} POSITION: {diff2.get_patch_position(filename, row)}")
+                    if errors:
+                        payload['body'] = testcase['error']['@message']
+                    if failures:
+                        payload['body'] = testcase['failure']['@message']
+                    if payload not in existing_comments:
+                        result = requests.post(url, data=json.dumps(payload), headers=headers)
+                        print(result)
+                        print(result.content)
+                        print(payload)
+                    else:
+                        print("already in")
+        orig = xsha
 
     return False
 
